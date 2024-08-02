@@ -1,0 +1,753 @@
+create of task
+update the task
+delete the task
+make the type of task like regular,urgent
+track the task  to-do, in-progress, and completed stages.
+reminder through the email when deadline is there
+Each user has a personalized dashboard that displays an overview of their tasks, upcoming deadlines, and recent activity.
+Users can update task statuses
+archive the task when completed
+
+
+
+user:
+name,email,password,createdat,updatedat,deletedat
+task:
+taskid,userid,name, description, due date,status,media,createdat,updatedat,deletedat
+typeoftask:(regular,urgent)
+typeoftaskid,taskid,typeoftask,createdat,updatedat,deletedat
+report:
+reportid,taskid,duedate,filepath,createdat,updatedat,deletedat
+
+
+many-one(user,task)
+one-one(task,typeoftask)
+https://github.com/Suvarnasrayshi/taskmanagement.git
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Memory updated
+To create a Vue.js frontend that handles login, sets a cookie, and interacts with your NestJS backend, follow these steps:
+
+1. Vue.js Component for Login
+Create a Vue component to handle user login. This component will use the fetch API to send login requests to your NestJS backend and handle the response, including setting cookies.
+
+vue
+Copy code
+<template>
+  <div>
+    <h1>Login</h1>
+    <form @submit.prevent="login">
+      <label for="email">Email:</label>
+      <input type="email" v-model="email" required />
+      <br />
+      <label for="password">Password:</label>
+      <input type="password" v-model="password" required />
+      <br />
+      <button type="submit">Login</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const email = ref('');
+const password = ref('');
+
+const login = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ email: email.value, password: password.value }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Login failed');
+    }
+
+    const data = await response.json();
+    
+    // Save token to cookies
+    document.cookie = `access_token=${data.access_token}; path=/;`;
+
+    alert('Login successful');
+    // Redirect or update UI as needed
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Login failed');
+  }
+};
+</script>
+2. Backend CORS Configuration
+Ensure that your backend is configured to accept requests from your Vue frontend. Your NestJS CORS configuration should be correct based on your provided code:
+
+typescript
+Copy code
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.enableCors({
+    origin: 'http://localhost:8080', // Replace with your Vue frontend URL
+    methods: 'GET,POST,PUT,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Authorization',
+  });
+  await app.listen(3000);
+}
+bootstrap();
+3. Handling Cookies
+In the Vue component, the token is set as a cookie manually. Make sure your backend is configured to handle cookies if you need to send cookies with requests.
+
+4. Secure Cookie Handling (Optional)
+For more secure handling, consider using HTTP-only cookies (which cannot be accessed via JavaScript) by setting additional flags in the cookie configuration:
+
+javascript
+Copy code
+document.cookie = `access_token=${data.access_token}; path=/; secure; HttpOnly; SameSite=Strict;`;
+5. Additional Notes
+Authentication Middleware: If your backend requires the token for authentication, make sure to include middleware or guards to verify the token on protected routes.
+Frontend Routing: Depending on your application, you may want to use Vue Router to handle redirection after a successful login.
+This setup should allow you to handle user login, manage cookies, and interact with your NestJS backend.
+
+give me the registration,login and forget password page to me
+
+
+import { CreateUserDto } from './dto/user.create.dto';
+import { UpdatePassDto } from './dto/user.update.dto';
+import { UserService } from './user.service';
+import { Body, Controller, Get, Patch, Post, Request } from '@nestjs/common';
+
+@Controller('user')
+export class UserController {
+  constructor(private UserService: UserService) {}
+ @Get()
+  getUser() {
+    return this.UserService.get();
+  }
+  @Post()
+  async registration(@Body() CreateUserDto:CreateUserDto){
+    console.log("createUserDto",CreateUserDto)
+    return this.UserService.create(CreateUserDto);
+  }
+  @Patch('/forgetPass')
+  async forgetPass(@Body() UpdatePassDto:UpdatePassDto){
+   const emailFor=UpdatePassDto.email;
+   const passwordFor=UpdatePassDto.password
+     this.UserService.forgetPass(emailFor,passwordFor)
+  }
+}
+export class CreateUserDto{
+  name:string;
+  email:string;
+  password:string
+
+}
+
+3/3
+
+ChatGPT
+To create a registration, login, and password reset functionality in your Vue.js frontend, you can create three separate components: Register.vue, Login.vue, and ForgotPassword.vue. Below is the example code for each component using the fetch API to interact with your NestJS backend.
+
+1. Registration Page (Register.vue)
+This component will handle user registration.
+
+vue
+Copy code
+<template>
+  <div>
+    <h1>Register</h1>
+    <form @submit.prevent="register">
+      <label for="name">Name:</label>
+      <input type="text" v-model="name" required />
+      <br />
+      <label for="email">Email:</label>
+      <input type="email" v-model="email" required />
+      <br />
+      <label for="password">Password:</label>
+      <input type="password" v-model="password" required />
+      <br />
+      <button type="submit">Register</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const name = ref('');
+const email = ref('');
+const password = ref('');
+
+const register = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: name.value, email: email.value, password: password.value }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Registration failed');
+    }
+
+    alert('Registration successful');
+    // Redirect or update UI as needed
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Registration failed');
+  }
+};
+</script>
+2. Login Page (Login.vue)
+This component will handle user login and set the cookie.
+
+vue
+Copy code
+<template>
+  <div>
+    <h1>Login</h1>
+    <form @submit.prevent="login">
+      <label for="email">Email:</label>
+      <input type="email" v-model="email" required />
+      <br />
+      <label for="password">Password:</label>
+      <input type="password" v-model="password" required />
+      <br />
+      <button type="submit">Login</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const email = ref('');
+const password = ref('');
+
+const login = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: email.value, password: password.value }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Login failed');
+    }
+
+    const data = await response.json();
+    
+    // Save token to cookies
+    document.cookie = `access_token=${data.access_token}; path=/;`;
+
+    alert('Login successful');
+    // Redirect or update UI as needed
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Login failed');
+  }
+};
+</script>
+3. Forgot Password Page (ForgotPassword.vue)
+This component will handle password reset requests.
+
+vue
+Copy code
+<template>
+  <div>
+    <h1>Forgot Password</h1>
+    <form @submit.prevent="forgotPassword">
+      <label for="email">Email:</label>
+      <input type="email" v-model="email" required />
+      <br />
+      <label for="password">New Password:</label>
+      <input type="password" v-model="password" required />
+      <br />
+      <button type="submit">Reset Password</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const email = ref('');
+const password = ref('');
+
+const forgotPassword = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/user/forgetPass', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: email.value, password: password.value }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Password reset failed');
+    }
+
+    alert('Password reset successful');
+    // Redirect or update UI as needed
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Password reset failed');
+  }
+};
+</script>
+Summary
+Registration: Submits user details to the backend to create a new user.
+Login: Submits email and password, and saves the authentication token in a cookie if the login is successful.
+Forgot Password: Submits email and new password to the backend to reset the user's password.
+Make sure your backend API endpoints match the URLs used in the fetch requests. Adjust the URLs in the fetch calls as needed based on your actual backend configuration.
+
+provide me every thing here 
+ChatGPT
+Here's a complete example of the Vue.js frontend setup for user registration, login, and password reset, including the necessary backend configurations for the NestJS API.
+
+Vue.js Components
+1. Registration Page (Register.vue)
+
+This component handles user registration.
+
+vue
+Copy code
+<template>
+  <div>
+    <h1>Register</h1>
+    <form @submit.prevent="register">
+      <label for="name">Name:</label>
+      <input type="text" v-model="name" required />
+      <br />
+      <label for="email">Email:</label>
+      <input type="email" v-model="email" required />
+      <br />
+      <label for="password">Password:</label>
+      <input type="password" v-model="password" required />
+      <br />
+      <button type="submit">Register</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const name = ref('');
+const email = ref('');
+const password = ref('');
+
+const register = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: name.value, email: email.value, password: password.value }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Registration failed');
+    }
+
+    alert('Registration successful');
+    // Redirect or update UI as needed
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Registration failed');
+  }
+};
+</script>
+2. Login Page (Login.vue)
+
+This component handles user login and sets the authentication token in cookies.
+
+vue
+Copy code
+<template>
+  <div>
+    <h1>Login</h1>
+    <form @submit.prevent="login">
+      <label for="email">Email:</label>
+      <input type="email" v-model="email" required />
+      <br />
+      <label for="password">Password:</label>
+      <input type="password" v-model="password" required />
+      <br />
+      <button type="submit">Login</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const email = ref('');
+const password = ref('');
+
+const login = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: email.value, password: password.value }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Login failed');
+    }
+
+    const data = await response.json();
+    
+    // Save token to cookies
+    document.cookie = `access_token=${data.access_token}; path=/;`;
+
+    alert('Login successful');
+    // Redirect or update UI as needed
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Login failed');
+  }
+};
+</script>
+3. Forgot Password Page (ForgotPassword.vue)
+
+This component handles password reset requests.
+
+vue
+Copy code
+<template>
+  <div>
+    <h1>Forgot Password</h1>
+    <form @submit.prevent="forgotPassword">
+      <label for="email">Email:</label>
+      <input type="email" v-model="email" required />
+      <br />
+      <label for="password">New Password:</label>
+      <input type="password" v-model="password" required />
+      <br />
+      <button type="submit">Reset Password</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const email = ref('');
+const password = ref('');
+
+const forgotPassword = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/user/forgetPass', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: email.value, password: password.value }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Password reset failed');
+    }
+
+    alert('Password reset successful');
+    // Redirect or update UI as needed
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Password reset failed');
+  }
+};
+</script>
+NestJS Backend Setup
+1. User Controller (user.controller.ts)
+
+Handles registration and password reset requests.
+
+typescript
+Copy code
+import { CreateUserDto } from './dto/user.create.dto';
+import { UpdatePassDto } from './dto/user.update.dto';
+import { UserService } from './user.service';
+import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
+
+@Controller('user')
+export class UserController {
+  constructor(private UserService: UserService) {}
+
+  @Get()
+  getUser() {
+    return this.UserService.get();
+  }
+
+  @Post()
+  async registration(@Body() CreateUserDto: CreateUserDto) {
+    console.log("createUserDto", CreateUserDto);
+    return this.UserService.create(CreateUserDto);
+  }
+
+  @Patch('/forgetPass')
+  async forgetPass(@Body() UpdatePassDto: UpdatePassDto) {
+    const { email, password } = UpdatePassDto;
+    await this.UserService.forgetPass(email, password);
+  }
+}
+2. Create User DTO (user.create.dto.ts)
+
+Defines the data structure for user registration.
+
+typescript
+Copy code
+export class CreateUserDto {
+  name: string;
+  email: string;
+  password: string;
+}
+3. Update Password DTO (user.update.dto.ts)
+
+Defines the data structure for password reset.
+
+typescript
+Copy code
+export class UpdatePassDto {
+  email: string;
+  password: string;
+}
+4. User Service (user.service.ts)
+
+Handles user creation and password reset logic.
+
+typescript
+Copy code
+import { Injectable } from '@nestjs/common';
+import { CreateUserDto } from './dto/user.create.dto';
+import { UpdatePassDto } from './dto/user.update.dto';
+
+@Injectable()
+export class UserService {
+  async get() {
+    // Fetch users logic
+  }
+
+  async create(createUserDto: CreateUserDto) {
+    // User creation logic
+  }
+
+  async forgetPass(email: string, password: string) {
+    // Password reset logic
+  }
+}
+5. Auth Controller (auth.controller.ts)
+
+Handles user login and token generation.
+
+typescript
+Copy code
+import { AuthService } from './auth.service';
+import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private AuthService: AuthService) {}
+
+  @UseGuards(AuthGuard('local'))
+  @Post('/login')
+  async login(@Request() req: any) {
+    return this.AuthService.generateToken(req.user);
+  }
+}
+6. Auth Service (auth.service.ts)
+
+Handles authentication logic and token generation.
+
+typescript
+Copy code
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { UserService } from 'src/user/user.service';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private UserService: UserService,
+    private jwtService: JwtService
+  ) {}
+
+  async logincheck(email: string, password: string) {
+    const emailCheck = await this.UserService.check(email);
+    if (!emailCheck) {
+      throw new UnauthorizedException('Wrong Credentials');
+    }
+    const passwordMatch = await bcrypt.compare(password, emailCheck.password);
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Wrong Credentials');
+    }
+    return emailCheck;
+  }
+
+  async generateToken(user: any) {
+    const payload = { email: user.email, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
+  }
+}
+7. JWT Strategy (jwt.strategy.ts)
+
+Handles JWT validation.
+
+typescript
+Copy code
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { PassportStrategy } from '@nestjs/passport';
+import { Injectable } from '@nestjs/common';
+import { jwtConstants } from './auth.constant';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor() {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey: jwtConstants.secret,
+    });
+  }
+
+  async validate(payload: any) {
+    return { id: payload.sub, email: payload.email };
+  }
+}
+8. Auth Module (auth.module.ts)
+
+Imports and configures authentication-related modules and providers.
+
+typescript
+Copy code
+import { Module } from '@nestjs/common';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { UserModule } from 'src/user/user.module';
+import { PassportModule } from '@nestjs/passport';
+import { LocalStrategy } from './local.strategy';
+import { JwtModule } from '@nestjs/jwt';
+import { jwtConstants } from './auth.constant';
+import { JwtStrategy } from './jwt.strategy';
+
+@Module({
+  controllers: [AuthController],
+  providers: [AuthService, LocalStrategy, JwtStrategy],
+  imports: [
+    UserModule,
+    PassportModule,
+    JwtModule.register({
+      secret: jwtConstants.secret,
+      signOptions: { expiresIn: '60s' },
+    }),
+  ],
+})
+export class AuthModule {}
+9. CORS Configuration in main.ts
+
+Ensure CORS is configured properly in your NestJS application.
+
+typescript
+Copy code
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.enableCors({
+    origin: 'http://localhost:8080', // Replace with your frontend URL
+    methods: 'GET,POST,PUT,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Authorization',
+  });
+  await app.listen(3000);
+}
+bootstrap();
+Summary
+Frontend: Implement registration, login, and password reset pages using Vue.js.
+Backend: Set up NestJS controllers and services to handle user registration, login, and password reset, and manage JWT authentication.

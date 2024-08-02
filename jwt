@@ -1,0 +1,128 @@
+To set a cookie from the backend in a NestJS application, you can use the @nestjs/common package to set cookies directly in your response. Here's how you can achieve this:
+
+Step-by-Step Guide
+1. Update the AuthController to Set Cookies
+
+Modify your AuthController to set cookies in the response after a successful login. You will use the @Res() decorator from NestJS to access the response object and set the cookie.
+
+Here's how you can modify the AuthController:
+
+typescript
+Copy code
+import { AuthService } from './auth.service';
+import { Body, Controller, Post, Request, UseGuards, Res } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private AuthService: AuthService) {}
+
+  @UseGuards(AuthGuard('local'))
+  @Post('/login')
+  async login(@Request() req: any, @Res() res: Response) {
+    const { access_token } = await this.AuthService.generateToken(req.user);
+
+    // Set cookie in response
+    res.cookie('access_token', access_token, {
+      httpOnly: true, // Cookie is not accessible via JavaScript
+      secure: process.env.NODE_ENV === 'production', // Set to true in production to ensure cookies are only sent over HTTPS
+      sameSite: 'Strict', // CSRF protection
+    });
+
+    return res.send({ message: 'Login successful' });
+  }
+}
+2. Update the AuthService
+
+The AuthService does not need changes if it is only generating the token. Ensure the token generation logic is correct:
+
+typescript
+Copy code
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { UserService } from 'src/user/user.service';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private UserService: UserService,
+    private jwtService: JwtService
+  ) {}
+
+  async logincheck(email: string, password: string) {
+    const emailCheck = await this.UserService.check(email);
+    if (!emailCheck) {
+      throw new UnauthorizedException('Wrong Credentials');
+    }
+    const passwordMatch = await bcrypt.compare(password, emailCheck.password);
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Wrong Credentials');
+    }
+    return emailCheck;
+  }
+
+  async generateToken(user: any) {
+    const payload = { email: user.email, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
+  }
+}
+3. Handle Cookies on the Frontend
+
+On the frontend side, you don't need to manually handle cookies if they are set with httpOnly attribute, as this prevents JavaScript access to them. The browser will automatically send the cookie with requests to the same domain.
+
+Here's a simple Vue.js example to handle login without worrying about the cookie:
+
+vue
+Copy code
+<template>
+  <div>
+    <h1>Login</h1>
+    <form @submit.prevent="login">
+      <label for="email">Email:</label>
+      <input type="email" v-model="email" required />
+      <br />
+      <label for="password">Password:</label>
+      <input type="password" v-model="password" required />
+      <br />
+      <button type="submit">Login</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const email = ref('');
+const password = ref('');
+
+const login = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: email.value, password: password.value }),
+      credentials: 'include', // Ensure cookies are sent with requests
+    });
+
+    if (!response.ok) {
+      throw new Error('Login failed');
+    }
+
+    alert('Login successful');
+    // Redirect or update UI as needed
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Login failed');
+  }
+};
+</script>
+Summary
+Backend (NestJS): Set the cookie using res.cookie() method in the AuthController.
+Frontend (Vue.js): Set credentials: 'include' in the fetch request to ensure cookies are sent with requests.
+This setup ensures that cookies are managed securely and correctly between the backend and frontend.
